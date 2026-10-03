@@ -1,0 +1,20 @@
+{
+  "accountId": "account-0001",
+  "vehicleLinks": [
+    {
+      "status": "ACTIVE",
+      "vehicleDetails": {
+        "energy": {
+          "code": "GASLN"
+        },
+        "engineEnergyType": "PHEV",
+        "model": {
+          "code": "XHN1CP",
+          "label": "RAFALE"
+        },
+        "vin": "VF1TESTVIN0000000"
+      },
+      "vin": "VF1TESTVIN0000000"
+    }
+  ]
+}

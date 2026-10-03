@@ -1,0 +1,15 @@
+{
+  "data": {
+    "attributes": {
+      "V2L_SystemStatusDisplay": 0,
+      "batteryAutonomy": 1,
+      "batteryLevel": 8,
+      "chargingRemainingTime": 744,
+      "chargingRemainingTimeLastUpdateDateTime": "2026-10-03T09:25:23Z",
+      "chargingStatus": 0.3,
+      "plugStatus": 1,
+      "timestamp": "2026-10-03T15:09:36Z"
+    },
+    "id": "VF1TESTVIN0000000"
+  }
+}

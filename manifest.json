@@ -8,6 +8,47 @@
   "repo": "mchacher/sowel-plugin-renault",
   "author": "mchacher",
   "sowelVersion": ">=1.73.0",
-  "settings": [],
+  "settings": [
+    {
+      "key": "email",
+      "label": "E-mail MyRenault",
+      "type": "text",
+      "required": true
+    },
+    {
+      "key": "password",
+      "label": "Mot de passe MyRenault",
+      "type": "password",
+      "required": true
+    },
+    {
+      "key": "locale",
+      "label": "Langue du compte",
+      "type": "text",
+      "required": false,
+      "defaultValue": "fr_FR",
+      "placeholder": "fr_FR"
+    },
+    {
+      "key": "home_radius_m",
+      "label": "Rayon « à la maison » (mètres)",
+      "type": "number",
+      "required": false,
+      "defaultValue": "200",
+      "placeholder": "200"
+    },
+    {
+      "key": "gigya_api_key",
+      "label": "Clé Gigya (si Renault la change)",
+      "type": "text",
+      "required": false
+    },
+    {
+      "key": "kamereon_api_key",
+      "label": "Clé Kamereon (si Renault la change)",
+      "type": "text",
+      "required": false
+    }
+  ],
   "apiVersion": 2
 }

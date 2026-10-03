@@ -24,6 +24,8 @@ export interface EventBus {
 
 export interface SettingsManager {
   get(key: string): string | undefined;
+  /** Writes are allowed under `integration.renault.*` only (spec 111). */
+  set(key: string, value: string): void;
 }
 
 export type DataType = "number" | "boolean" | "string" | "enum";
@@ -120,4 +122,9 @@ export interface IntegrationPlugin {
   stop(): Promise<void>;
   executeOrder(device: Device, orderKey: string, value: unknown): Promise<void>;
   refresh?(): Promise<void>;
+  /**
+   * Declares a polling integration. The core shows it, staggers starts, and
+   * waits twice `intervalMs` before calling an order unconfirmed.
+   */
+  getPollingInfo?(): { lastPollAt: string; intervalMs: number } | null;
 }
