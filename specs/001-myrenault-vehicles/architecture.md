@@ -62,11 +62,11 @@ A single queue per account; each Vehicle registers jobs (`battery` 10 min, `cock
 
 ## Capability table (`models.ts`)
 
-| Model code | Car           | `charge_start`               | `wake` | soc-levels                         |
-| ---------- | ------------- | ---------------------------- | ------ | ---------------------------------- |
-| `XHN1CP`   | Rafale (PHEV) | none (forbidden, measured)   | lights | read: yes (measured); write: probe |
-| `XCB1VE`   | Megane E-Tech | KCM `charge/start`           | lights | yes                                |
-| other      | —             | KCA `charging-start` (probe) | lights | probe                              |
+| Model code | Car           | `charge_start`               | `wake` | soc-levels                     |
+| ---------- | ------------- | ---------------------------- | ------ | ------------------------------ |
+| `XHN1CP`   | Rafale (PHEV) | none (forbidden, measured)   | lights | read and write: yes (measured) |
+| `XCB1VE`   | Megane E-Tech | KCM `charge/start`           | lights | yes                            |
+| other      | —             | KCA `charging-start` (probe) | lights | probe                          |
 
 A `forbidden` / `notFound` answer updates the remembered capabilities and re-declares the device without the order or point.
 

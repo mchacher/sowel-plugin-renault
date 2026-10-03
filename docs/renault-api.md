@@ -80,7 +80,8 @@ Prefix: `{kam}/commerce/v1/accounts/{accountId}/kamereon`. Reads return the car'
 - **[measured]** `charging-start` → `err.func.wired.forbidden` (refused by the server, whatever the car's state).
 - **[measured]** The car sleeps minutes after a paused charge; a charger restart or a 20 s mains cut does not wake it; **the lights action wakes it** (the lights do not flash) and the charge resumed 13 s later. The horn wakes it too.
 - **[measured]** `hvac-status.socThreshold` = 10 (HVAC refused below 10 % battery).
-- Unknown: whether `soc-levels` answers on XHN1CP (not documented in RA).
+- **[measured]** `soc-levels` answers on XHN1CP, read and write (100 → 95 → 100, read back each time).
+- **[measured]** End to end through Sowel: charger ON refused while the car slept; `wake` (lights) then charger ON → charging at 2.1 kW within 40 s.
 
 ## Contract mapping (core spec 183)
 

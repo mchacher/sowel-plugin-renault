@@ -64,7 +64,7 @@ This spec connects one MyRenault account to Sowel and publishes every electric o
 
 - [x] With e-mail and password, the plugin logs in, publishes the owner's Rafale with its battery level, range, plugged and charging state, report time, mileage, fuel extras, and `at_home`.
 - [x] A restart reuses the stored login token (no password sent); an expired JWT is refreshed transparently.
-- [ ] `wake` on the sleeping Rafale wakes it (charge resumes on the dé charger), measured.
+- [x] `wake` on the sleeping Rafale wakes it (charge resumes on the dé charger), measured.
 - [x] `charge_start` is not declared on the Rafale; on an unknown model a `forbidden` answer removes it.
 - [x] Never more than 40 requests per hour per account; `overloaded` pauses 15 min.
 - [x] No password, token, full VIN or coordinate in any log, value, error or fixture — tested with sentinels.

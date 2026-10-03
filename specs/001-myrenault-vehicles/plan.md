@@ -7,7 +7,7 @@
 - [x] 3. `api/http.ts` interface, `api/rate.ts`, `api/session.ts`, `api/kamereon.ts` + tests with a fake HTTP.
 - [x] 4. `vehicle.ts`, `account.ts` (discovery, scheduler, capability memory) + tests with fake timers.
 - [x] 5. `index.ts`, `config.ts`, manifest settings, README.
-- [ ] 6. Live check on the owner's account: login, publish the Rafale (done read-only 2026-10-03: all contract points published, no leak in logs), `wake` on the sleeping car with the charge resuming on the dé charger (owner's agreement for the action).
+- [x] 6. Live check on the owner's account, 2026-10-03, Sowel candidate instance: login, the Rafale published and auto-bound to an `electric_vehicle` equipment (all contract points); with the car asleep the dé charger refused ON ("vehicle not asking for current"); **Réveiller** clicked in the UI at 18:10:16, charger ON accepted at 18:10:38, charging at 1.3 then 2.1 kW from 18:10:54, the car reported `charging` on the 60 s re-read; `charge_limit` 100 → 95 → 100 from the UI stepper, read back each time; no secret, VIN or JWT in the container logs.
 
 ## Test plan
 
