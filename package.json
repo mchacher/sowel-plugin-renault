@@ -1,6 +1,6 @@
 {
   "name": "sowel-plugin-renault",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Sowel plugin: Renault cars through the MyRenault cloud, published as electric vehicles (core spec 183)",
   "type": "module",
   "main": "dist/index.js",
