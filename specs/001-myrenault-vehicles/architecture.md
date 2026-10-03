@@ -48,11 +48,11 @@ Source id: the VIN. `manufacturer: "Renault"`, `model`: model label, `powerSourc
 | `fuel_range`     | number  | `generic`           | km   | cockpit `fuelAutonomy` (PHEV)           |
 | `fuel_quantity`  | number  | `generic`           | L    | cockpit `fuelQuantity` (PHEV)           |
 
-| Order              | Type    | Category              | Notes                           |
-| ------------------ | ------- | --------------------- | ------------------------------- |
-| `wake`             | boolean | `ev_wake`             | value ignored (momentary)       |
-| `charge_start`     | boolean | `ev_charge_start`     | per capability                  |
-| `set_charge_limit` | number  | `set_ev_charge_limit` | min 55, max 100; per capability |
+| Order          | Type    | Category              | Notes                           |
+| -------------- | ------- | --------------------- | ------------------------------- |
+| `wake`         | boolean | `ev_wake`             | value ignored (momentary)       |
+| `charge_start` | boolean | `ev_charge_start`     | per capability                  |
+| `charge_limit` | number  | `set_ev_charge_limit` | min 55, max 100; per capability |
 
 Keys equal the contract aliases on purpose: the core binds by category anyway, and the alias fallback then agrees.
 

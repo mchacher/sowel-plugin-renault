@@ -31,7 +31,7 @@
 | `vehicle`  | Battery poll                                                                                  | `updateDeviceData` with the contract keys; reported_at from the car |
 | `vehicle`  | `wake`                                                                                        | lights action sent; battery re-read 60 s later                      |
 | `vehicle`  | `charge_start` → forbidden                                                                    | rejects with the readable reason; order removed and remembered      |
-| `vehicle`  | `set_charge_limit` 83                                                                         | POST `{socMin: current, socTarget: 85}`                             |
+| `vehicle`  | `charge_limit` order 83                                                                       | POST `{socMin: current, socTarget: 85}`                             |
 | `account`  | Vehicles list with a petrol car and a PHEV                                                    | only the PHEV published                                             |
 | `account`  | Car removed from the account                                                                  | stale device removed                                                |
 | `index`    | **Secrets never leak**: every path with sentinel password, token, VIN, coordinates            | none in logs, values, errors                                        |

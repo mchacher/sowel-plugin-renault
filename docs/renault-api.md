@@ -84,19 +84,19 @@ Prefix: `{kam}/commerce/v1/accounts/{accountId}/kamereon`. Reads return the car'
 
 ## Contract mapping (core spec 183)
 
-| Sowel point        | Renault source                                                                                                                                                                                                             |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `battery_level`    | `battery-status.batteryLevel`                                                                                                                                                                                              |
-| `range`            | `battery-status.batteryAutonomy`                                                                                                                                                                                           |
-| `plugged`          | `plugStatus == 1` (fallback on `chargingStatus` when unknown)                                                                                                                                                              |
-| `charging_state`   | plugStatus −1 → error · 0 or chargingStatus 0.4 → unplugged · 1.0/−1.6 → charging · 0.2 → completed · 0.1 → scheduled · 0.3/−1.3 → waiting · −1.0 plugged → error · 0.0/−1.4/−1.5 plugged → idle · −1.1/unknown → previous |
-| `reported_at`      | `battery-status.timestamp`, normalised to ISO UTC                                                                                                                                                                          |
-| `at_home`          | distance(location, home.latitude/longitude) < a radius; coordinates discarded                                                                                                                                              |
-| `mileage`          | `cockpit.totalMileage`                                                                                                                                                                                                     |
-| `charge_limit`     | `soc-levels.socTarget` (absent when forbidden)                                                                                                                                                                             |
-| `wake`             | lights action (Rafale); per-model strategy                                                                                                                                                                                 |
-| `charge_start`     | KCA or KCM per model; absent when forbidden                                                                                                                                                                                |
-| `set_charge_limit` | POST soc-levels keeping `socMin`                                                                                                                                                                                           |
+| Sowel point            | Renault source                                                                                                                                                                                                             |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `battery_level`        | `battery-status.batteryLevel`                                                                                                                                                                                              |
+| `range`                | `battery-status.batteryAutonomy`                                                                                                                                                                                           |
+| `plugged`              | `plugStatus == 1` (fallback on `chargingStatus` when unknown)                                                                                                                                                              |
+| `charging_state`       | plugStatus −1 → error · 0 or chargingStatus 0.4 → unplugged · 1.0/−1.6 → charging · 0.2 → completed · 0.1 → scheduled · 0.3/−1.3 → waiting · −1.0 plugged → error · 0.0/−1.4/−1.5 plugged → idle · −1.1/unknown → previous |
+| `reported_at`          | `battery-status.timestamp`, normalised to ISO UTC                                                                                                                                                                          |
+| `at_home`              | distance(location, home.latitude/longitude) < a radius; coordinates discarded                                                                                                                                              |
+| `mileage`              | `cockpit.totalMileage`                                                                                                                                                                                                     |
+| `charge_limit`         | `soc-levels.socTarget` (absent when forbidden)                                                                                                                                                                             |
+| `wake`                 | lights action (Rafale); per-model strategy                                                                                                                                                                                 |
+| `charge_start`         | KCA or KCM per model; absent when forbidden                                                                                                                                                                                |
+| `charge_limit` (order) | POST soc-levels keeping `socMin`                                                                                                                                                                                           |
 
 ## Rate budget
 

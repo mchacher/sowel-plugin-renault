@@ -16,7 +16,7 @@ This spec connects one MyRenault account to Sowel and publishes every electric o
 1. Log in to MyRenault with the owner's e-mail and password, keep the session alive with the long-lived login token, and survive key drift and token expiry.
 2. Discover the account's electric and plug-in hybrid cars and publish each as a device with the contract categories of core spec 183.
 3. Keep their data current within Renault's rate budget, and say how old it is (`reported_at`).
-4. Implement `wake` (lights on the models where it works) and, where the maker allows it, `charge_start` and `set_charge_limit`.
+4. Implement `wake` (lights on the models where it works) and, where the maker allows it, `charge_start` and the `charge_limit` order.
 5. Never leak a secret, a VIN or a coordinate.
 
 ## Non-goals
@@ -40,7 +40,7 @@ This spec connects one MyRenault account to Sowel and publishes every electric o
 
 - **FR5** On start and every 24 h: person → accounts of type `MYRENAULT` → vehicles. A car is published when its `engineEnergyType` (else `energy.code`) is `ELEC`, `ELECX` or `PHEV` and its link has details. Its source id is its VIN (stable, never logged); its name is the model label ("RAFALE").
 - **FR6** Each car is a device with the contract data points of core spec 183 (`ev_battery_level`, `ev_range`, `ev_plugged`, `ev_charging_state`, `ev_reported_at`, `ev_at_home`, `ev_mileage`, `ev_charge_limit` when available) and the plug-in hybrid's fuel range and quantity as `generic` extras.
-- **FR7** Orders are declared per model from a capability table seeded from the reference library and from what was measured: the Rafale (XHN1CP) declares `wake` and no `charge_start` (forbidden, measured) and no `set_charge_limit` until soc-levels is known to work; an unknown model declares `wake` and `charge_start`, and an order refused with `forbidden` is removed from the device and remembered for that car.
+- **FR7** Orders are declared per model from a capability table seeded from the reference library and from what was measured: the Rafale (XHN1CP) declares `wake` and no `charge_start` (forbidden, measured) and no `charge_limit` order until soc-levels is known to work; an unknown model declares `wake` and `charge_start`, and an order refused with `forbidden` is removed from the device and remembered for that car.
 
 ### Polling
 
@@ -57,7 +57,7 @@ This spec connects one MyRenault account to Sowel and publishes every electric o
 
 - **FR13** `wake` sends the lights action (`horn-lights`, target `lights`). It resolves when Renault accepts it; the plugin then reads the battery status again after 60 s (the car reports once awake).
 - **FR14** `charge_start` sends the model's charge-start action (KCA, or KCM for the Megane E-Tech family). A `forbidden` answer rejects with "charge start is not allowed for this vehicle" and removes the order (FR7).
-- **FR15** `set_charge_limit` posts soc-levels with the current `socMin` and the requested target rounded to 5 within 55–100; the reading follows on the next soc-levels read.
+- **FR15** The `charge_limit` order posts soc-levels with the current `socMin` and the requested target rounded to 5 within 55–100; the reading follows on the next soc-levels read.
 - **FR16** `executeOrder` rejects with a short, user-readable reason; never with a raw API body.
 
 ## Acceptance criteria
