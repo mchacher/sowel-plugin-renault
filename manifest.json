@@ -2,7 +2,7 @@
   "id": "renault",
   "type": "integration",
   "name": "Renault",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Renault cars through the MyRenault cloud: battery level, range, charging state, and a remote wake to resume a paused charge",
   "icon": "Car",
   "repo": "mchacher/sowel-plugin-renault",
