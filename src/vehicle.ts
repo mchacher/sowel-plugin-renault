@@ -132,7 +132,11 @@ export class Vehicle {
     if (!this.refused("soc_read"))
       data.push({ key: "charge_limit", type: "number", category: "ev_charge_limit", unit: "%" });
 
-    const orders: DiscoveredOrder[] = [{ key: "wake", type: "boolean", category: "ev_wake" }];
+    const orders: DiscoveredOrder[] = [
+      { key: "wake", type: "boolean", category: "ev_wake" },
+      // Core spec 184: read the latest report now (one request, never wakes the car).
+      { key: "refresh", type: "boolean", category: "ev_refresh" },
+    ];
     if (this.chargeStartRoute())
       orders.push({ key: "charge_start", type: "boolean", category: "ev_charge_start" });
     if (!this.refused("soc_read") && !this.refused("soc_write"))
@@ -287,6 +291,24 @@ export class Vehicle {
       }),
     );
     scheduler.after(AFTER_ACTION_READ_MS, () => this.pollBattery());
+  }
+
+  /** `refresh`: one battery read now, through the budget. Rejects on failure. */
+  async refresh(): Promise<void> {
+    try {
+      const attrs = attributesOf(await this.ctx.kamereon.get(this.carPath(2, "battery-status")));
+      if (attrs) {
+        const payload = batteryPayload(attrs, this.chargingState);
+        if (typeof payload.charging_state === "string")
+          this.chargingState = payload.charging_state as EvChargingState;
+        this.publish(payload);
+      }
+      this.setOnline(true);
+      this.readOk("battery");
+    } catch (err) {
+      // The cause is a RenaultError, rebuilt from codes: it carries no body.
+      throw new Error(orderFailureReason(err), { cause: err });
+    }
   }
 
   async chargeStart(scheduler: Scheduler): Promise<void> {

@@ -58,6 +58,7 @@ This spec connects one MyRenault account to Sowel and publishes every electric o
 - **FR13** `wake` sends the lights action (`horn-lights`, target `lights`). It resolves when Renault accepts it; the plugin then reads the battery status again after 60 s (the car reports once awake).
 - **FR14** `charge_start` sends the model's charge-start action (KCA, or KCM for the Megane E-Tech family). A `forbidden` answer rejects with "charge start is not allowed for this vehicle" and removes the order (FR7).
 - **FR15** The `charge_limit` order posts soc-levels with the current `socMin` and the requested target rounded to 5 within 55–100; the reading follows on the next soc-levels read.
+- **FR15b** `refresh` (core spec 184, category `ev_refresh`) reads the battery status once, through the budget, and publishes it; it never wakes the car. Declared on every car.
 - **FR16** `executeOrder` rejects with a short, user-readable reason; never with a raw API body.
 
 ## Acceptance criteria

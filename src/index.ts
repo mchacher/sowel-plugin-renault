@@ -265,6 +265,8 @@ class RenaultPlugin implements IntegrationPlugin {
         return vehicle.chargeStart(scheduler);
       case "charge_limit":
         return vehicle.setChargeLimit(value, scheduler);
+      case "refresh":
+        return vehicle.refresh();
       default:
         throw new Error(`unknown order "${orderKey}"`);
     }

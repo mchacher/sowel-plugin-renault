@@ -114,6 +114,7 @@ describe("Vehicle declaration", () => {
     });
     expect(Object.fromEntries(d.orders.map((x) => [x.key, x.category]))).toEqual({
       wake: "ev_wake",
+      refresh: "ev_refresh",
       charge_limit: "set_ev_charge_limit",
     });
     expect(d.orders.find((o) => o.key === "charge_limit")).toMatchObject({ min: 55, max: 100 });
@@ -224,6 +225,22 @@ describe("Vehicle orders", () => {
     await vi.advanceTimersByTimeAsync(60_000);
     expect(world.count(/battery-status$/)).toBe(1);
     scheduler.stop();
+  });
+
+  it("refresh reads the battery once and publishes it", async () => {
+    const { world, vehicle, deviceManager } = setup();
+    await vehicle.refresh();
+    expect(world.count(/battery-status$/)).toBe(1);
+    expect(deviceManager.updateDeviceData.mock.calls[0][2]).toMatchObject({
+      charging_state: "waiting",
+    });
+    expect(world.count(/horn-lights$/)).toBe(0);
+  });
+
+  it("refresh rejects with a readable reason when Renault is unreachable", async () => {
+    const { world, vehicle } = setup();
+    world.on("GET", /battery-status$/, () => "network");
+    await expect(vehicle.refresh()).rejects.toThrow("the Renault cloud cannot be reached");
   });
 
   it("charge_start on the Rafale is refused without calling Renault", async () => {

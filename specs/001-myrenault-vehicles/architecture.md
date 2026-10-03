@@ -48,11 +48,12 @@ Source id (and default name): model label + the VIN's last four characters (`Raf
 | `fuel_range`     | number  | `generic`           | km   | cockpit `fuelAutonomy` (PHEV)           |
 | `fuel_quantity`  | number  | `generic`           | L    | cockpit `fuelQuantity` (PHEV)           |
 
-| Order          | Type    | Category              | Notes                           |
-| -------------- | ------- | --------------------- | ------------------------------- |
-| `wake`         | boolean | `ev_wake`             | value ignored (momentary)       |
-| `charge_start` | boolean | `ev_charge_start`     | per capability                  |
-| `charge_limit` | number  | `set_ev_charge_limit` | min 55, max 100; per capability |
+| Order          | Type    | Category              | Notes                                                     |
+| -------------- | ------- | --------------------- | --------------------------------------------------------- |
+| `wake`         | boolean | `ev_wake`             | value ignored (momentary)                                 |
+| `charge_start` | boolean | `ev_charge_start`     | per capability                                            |
+| `refresh`      | boolean | `ev_refresh`          | one battery read now (core spec 184); never wakes the car |
+| `charge_limit` | number  | `set_ev_charge_limit` | min 55, max 100; per capability                           |
 
 Keys equal the contract aliases on purpose: the core binds by category anyway, and the alias fallback then agrees.
 
