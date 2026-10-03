@@ -45,7 +45,7 @@ This spec connects one MyRenault account to Sowel and publishes every electric o
 ### Polling
 
 - **FR8** One request at a time per account, and a budget of 40 requests per rolling hour shared by all cars. Battery status every 10 min per car; cockpit and location every 60 min; soc-levels once at start and after a write. When the budget is spent, polls wait.
-- **FR9** `reported_at` is the car's own `battery-status.timestamp`, never the poll time. The device stays `online` while the cloud answers; a car whose report is days old stays online (the age tells the story).
+- **FR9** The plugin declares itself a polling integration (`getPollingInfo`, the battery cadence): the core then waits twice that before calling an order unconfirmed — a car reports a minute or more after an order, and the default 30 s raised a false "not confirmed" on every charge-limit change (found on the candidate instance). `reported_at` is the car's own `battery-status.timestamp`, never the poll time. The device stays `online` while the cloud answers; a car whose report is days old stays online (the age tells the story).
 - **FR10** `err.func.wired.overloaded` pauses all polling 15 min. `err.func.wired.unauthorized` refreshes the JWT once and retries once (the retry counts against the budget); repeated, it pauses all requests 15 min, as it can mean throttling. Wrong credentials or two-factor met later, from a poll, stop every poll and set status `error`: the password is never resent in a loop.
 
 ### Contract mapping

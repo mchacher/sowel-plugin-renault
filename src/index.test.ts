@@ -166,6 +166,18 @@ describe("RenaultPlugin", () => {
     await plugin.stop();
   });
 
+  it("declares itself a polling integration at the battery cadence", async () => {
+    const { plugin } = setup();
+    expect(plugin.getPollingInfo?.()).toBeNull();
+    await plugin.start();
+    await vi.advanceTimersByTimeAsync(1_000);
+    const info = plugin.getPollingInfo?.();
+    expect(info?.intervalMs).toBe(10 * 60_000);
+    expect(Date.parse(info!.lastPollAt)).toBeGreaterThan(0);
+    await plugin.stop();
+    expect(plugin.getPollingInfo?.()).toBeNull();
+  });
+
   it("routes orders to the car and rejects unknown ones", async () => {
     const { plugin, world } = setup();
     await plugin.start();

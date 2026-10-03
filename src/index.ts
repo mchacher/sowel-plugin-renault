@@ -23,6 +23,7 @@ import {
   SETTINGS_SCHEMA,
 } from "./config.js";
 import { Scheduler } from "./scheduler.js";
+import { BATTERY_EVERY_MS } from "./vehicle.js";
 import type {
   Device,
   IntegrationPlugin,
@@ -57,6 +58,7 @@ class RenaultPlugin implements IntegrationPlugin {
   private retryMs = RETRY_FIRST_MS;
   private alarmRaised = false;
   private lastFailure: string | null = null;
+  private lastPollAt: string | null = null;
 
   constructor(
     private readonly deps: PluginDeps,
@@ -182,8 +184,22 @@ class RenaultPlugin implements IntegrationPlugin {
     this.logger.error({ kind, reason: message }, "Renault connection failed");
   }
 
+  /**
+   * A car reports a minute or more after an order (charge limit): with the
+   * battery cadence declared, the core waits 20 min before calling an order
+   * unconfirmed instead of its default 30 s.
+   */
+  getPollingInfo(): { lastPollAt: string; intervalMs: number } | null {
+    if (!this.account) return null;
+    return {
+      lastPollAt: this.lastPollAt ?? new Date(0).toISOString(),
+      intervalMs: BATTERY_EVERY_MS,
+    };
+  }
+
   /** Reads reaching Renault (or not) after discovery. */
   private setHealth(ok: boolean): void {
+    if (ok) this.lastPollAt = new Date().toISOString();
     if (this.status === "error" || this.status === "not_configured") return;
     if (ok && this.lastFailure === null) this.setStatus("connected");
     else if (!ok) this.setStatus("disconnected");

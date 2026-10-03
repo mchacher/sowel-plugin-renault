@@ -122,4 +122,9 @@ export interface IntegrationPlugin {
   stop(): Promise<void>;
   executeOrder(device: Device, orderKey: string, value: unknown): Promise<void>;
   refresh?(): Promise<void>;
+  /**
+   * Declares a polling integration. The core shows it, staggers starts, and
+   * waits twice `intervalMs` before calling an order unconfirmed.
+   */
+  getPollingInfo?(): { lastPollAt: string; intervalMs: number } | null;
 }
