@@ -1,0 +1,15 @@
+{
+  "accounts": [
+    {
+      "accountId": "account-0001",
+      "accountStatus": "ACTIVE",
+      "accountType": "MYRENAULT"
+    },
+    {
+      "accountId": "account-other-1",
+      "accountStatus": "ACTIVE",
+      "accountType": "SFDC"
+    }
+  ],
+  "personId": "person-0001"
+}

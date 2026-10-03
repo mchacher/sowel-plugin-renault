@@ -2,12 +2,12 @@
 
 ## Steps
 
-- [ ] 1. Record and scrub fixtures from the owner's account (reads only): person, vehicles, battery-status, cockpit, hvac-status, location (coordinates replaced), and the `forbidden` body of charging-start.
-- [ ] 2. Pure modules: `mapping.ts`, `models.ts`, `api/errors.ts` + tests.
-- [ ] 3. `api/http.ts` interface, `api/rate.ts`, `api/session.ts`, `api/kamereon.ts` + tests with a fake HTTP.
-- [ ] 4. `vehicle.ts`, `account.ts` (discovery, scheduler, capability memory) + tests with fake timers.
-- [ ] 5. `index.ts`, `config.ts`, manifest settings, README.
-- [ ] 6. Live check on the owner's account: login, publish the Rafale, `wake` on the sleeping car with the charge resuming on the dé charger (owner's agreement for the action).
+- [x] 1. Record and scrub fixtures from the owner's account (reads only): person, vehicles, battery-status, cockpit, hvac-status, location (coordinates replaced), and the `forbidden` body of charging-start.
+- [x] 2. Pure modules: `mapping.ts`, `models.ts`, `api/errors.ts` + tests.
+- [x] 3. `api/http.ts` interface, `api/rate.ts`, `api/session.ts`, `api/kamereon.ts` + tests with a fake HTTP.
+- [x] 4. `vehicle.ts`, `account.ts` (discovery, scheduler, capability memory) + tests with fake timers.
+- [x] 5. `index.ts`, `config.ts`, manifest settings, README.
+- [ ] 6. Live check on the owner's account: login, publish the Rafale (done read-only 2026-10-03: all contract points published, no leak in logs), `wake` on the sleeping car with the charge resuming on the dé charger (owner's agreement for the action).
 
 ## Test plan
 

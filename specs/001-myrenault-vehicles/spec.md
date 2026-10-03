@@ -33,20 +33,20 @@ This spec connects one MyRenault account to Sowel and publishes every electric o
 
 - **FR1** Settings: `email` (required), `password` (password type, required), `locale` (default `fr_FR`), `gigya_api_key` and `kamereon_api_key` (optional overrides of the shipped defaults, for when Renault rotates them), `home_radius_m` (default 200).
 - **FR2** Login: Gigya `accounts.login` → login token → `getAccountInfo` (person id) → `getJWT` (15 min). The login token is stored in the plugin's own settings (`login_token`, never shown) so a restart does not resend the password; the JWT is refreshed from the login token 60 s before it expires; on Gigya `403005`/`403013` the login token is dropped and the plugin logs in again with the password.
-- **FR3** Failures are told apart, once per transition: `403042` invalid credentials (status `error`; message adds "or Renault changed its API key" when the same credentials worked before); `403101` two-factor authentication required (status `error`, a `system.alarm.raised` with the explanation); network failure (status `disconnected`, retry with backoff 1 → 30 min).
+- **FR3** Failures are told apart, once per transition: `403042` invalid credentials (status `error`; the message adds "or Renault changed its API key", since Renault answers the same code for both); `403101` two-factor authentication required (status `error`, a `system.alarm.raised` with the explanation); network failure (status `disconnected`, retry with backoff 1 → 30 min).
 - **FR4** No secret (password, login token, JWT), no VIN beyond its last four characters and no coordinate is ever written to a log line, a published value, an error message or a fixture.
 
 ### Discovery
 
-- **FR5** On start and every 24 h: person → accounts of type `MYRENAULT` → vehicles. A car is published when its `engineEnergyType` (else `energy.code`) is `ELEC`, `ELECX` or `PHEV` and its link has details. Its source id is its VIN (stable, never logged); its name is the model label ("RAFALE").
+- **FR5** On start and every 24 h: person → accounts of type `MYRENAULT` → vehicles. A car is published when its `engineEnergyType` (else `energy.code`) is `ELEC`, `ELECX` or `PHEV` and its link has details. Its source id — which the core also uses as the device's default name — is the model label and the VIN's last four characters (`Rafale 3061`): the full VIN stays in request paths only.
 - **FR6** Each car is a device with the contract data points of core spec 183 (`ev_battery_level`, `ev_range`, `ev_plugged`, `ev_charging_state`, `ev_reported_at`, `ev_at_home`, `ev_mileage`, `ev_charge_limit` when available) and the plug-in hybrid's fuel range and quantity as `generic` extras.
-- **FR7** Orders are declared per model from a capability table seeded from the reference library and from what was measured: the Rafale (XHN1CP) declares `wake` and no `charge_start` (forbidden, measured) and no `charge_limit` order until soc-levels is known to work; an unknown model declares `wake` and `charge_start`, and an order refused with `forbidden` is removed from the device and remembered for that car.
+- **FR7** Orders are declared per model from a capability table seeded from the reference library and from what was measured: the Rafale (XHN1CP) declares `wake` and no `charge_start` (forbidden, measured); the Megane E-Tech (XCB1VE) and unknown models declare `charge_start`. `charge_limit` (data and order) is declared while soc-levels answers (measured: it does on the Rafale). An order or a read refused with `forbidden`/`notFound` is removed from the device and remembered for that car.
 
 ### Polling
 
 - **FR8** One request at a time per account, and a budget of 40 requests per rolling hour shared by all cars. Battery status every 10 min per car; cockpit and location every 60 min; soc-levels once at start and after a write. When the budget is spent, polls wait.
 - **FR9** `reported_at` is the car's own `battery-status.timestamp`, never the poll time. The device stays `online` while the cloud answers; a car whose report is days old stays online (the age tells the story).
-- **FR10** `err.func.wired.overloaded` pauses all polling 15 min. `err.func.wired.unauthorized` refreshes the JWT once and retries once; repeated, it backs off like a network failure (it can mean throttling).
+- **FR10** `err.func.wired.overloaded` pauses all polling 15 min. `err.func.wired.unauthorized` refreshes the JWT once and retries once (the retry counts against the budget); repeated, it pauses all requests 15 min, as it can mean throttling. Wrong credentials or two-factor met later, from a poll, stop every poll and set status `error`: the password is never resent in a loop.
 
 ### Contract mapping
 
@@ -62,13 +62,13 @@ This spec connects one MyRenault account to Sowel and publishes every electric o
 
 ## Acceptance criteria
 
-- [ ] With e-mail and password, the plugin logs in, publishes the owner's Rafale with its battery level, range, plugged and charging state, report time, mileage, fuel extras, and `at_home`.
-- [ ] A restart reuses the stored login token (no password sent); an expired JWT is refreshed transparently.
+- [x] With e-mail and password, the plugin logs in, publishes the owner's Rafale with its battery level, range, plugged and charging state, report time, mileage, fuel extras, and `at_home`.
+- [x] A restart reuses the stored login token (no password sent); an expired JWT is refreshed transparently.
 - [ ] `wake` on the sleeping Rafale wakes it (charge resumes on the dé charger), measured.
-- [ ] `charge_start` is not declared on the Rafale; on an unknown model a `forbidden` answer removes it.
-- [ ] Never more than 40 requests per hour per account; `overloaded` pauses 15 min.
-- [ ] No password, token, full VIN or coordinate in any log, value, error or fixture — tested with sentinels.
-- [ ] `npm run validate` and CI green.
+- [x] `charge_start` is not declared on the Rafale; on an unknown model a `forbidden` answer removes it.
+- [x] Never more than 40 requests per hour per account; `overloaded` pauses 15 min.
+- [x] No password, token, full VIN or coordinate in any log, value, error or fixture — tested with sentinels.
+- [x] `npm run validate` and CI green.
 
 ## Edge cases
 

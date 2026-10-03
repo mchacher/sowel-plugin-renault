@@ -33,7 +33,7 @@ The plugin writes only under its own namespace (spec 111 allows it).
 
 ## Device
 
-Source id: the VIN. `manufacturer: "Renault"`, `model`: model label, `powerSource: "mains"`.
+Source id (and default name): model label + the VIN's last four characters (`Rafale 3061`); the VIN itself is used in request paths only. `manufacturer: "Renault"`, `model`: model label, `powerSource: "mains"`.
 
 | Key              | Type    | Category            | Unit | From                                    |
 | ---------------- | ------- | ------------------- | ---- | --------------------------------------- |
@@ -62,11 +62,11 @@ A single queue per account; each Vehicle registers jobs (`battery` 10 min, `cock
 
 ## Capability table (`models.ts`)
 
-| Model code | Car           | `charge_start`               | `wake` | soc-levels |
-| ---------- | ------------- | ---------------------------- | ------ | ---------- |
-| `XHN1CP`   | Rafale (PHEV) | none (forbidden, measured)   | lights | probe      |
-| `XCB1VE`   | Megane E-Tech | KCM `charge/start`           | lights | yes        |
-| other      | —             | KCA `charging-start` (probe) | lights | probe      |
+| Model code | Car           | `charge_start`               | `wake` | soc-levels                         |
+| ---------- | ------------- | ---------------------------- | ------ | ---------------------------------- |
+| `XHN1CP`   | Rafale (PHEV) | none (forbidden, measured)   | lights | read: yes (measured); write: probe |
+| `XCB1VE`   | Megane E-Tech | KCM `charge/start`           | lights | yes                                |
+| other      | —             | KCA `charging-start` (probe) | lights | probe                              |
 
 A `forbidden` / `notFound` answer updates the remembered capabilities and re-declares the device without the order or point.
 

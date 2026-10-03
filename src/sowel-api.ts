@@ -24,6 +24,8 @@ export interface EventBus {
 
 export interface SettingsManager {
   get(key: string): string | undefined;
+  /** Writes are allowed under `integration.renault.*` only (spec 111). */
+  set(key: string, value: string): void;
 }
 
 export type DataType = "number" | "boolean" | "string" | "enum";
