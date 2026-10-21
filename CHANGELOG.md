@@ -2,7 +2,7 @@
 
 All notable changes to this plugin. Versions follow semver; the registry in `mchacher/sowel` carries the SHA256 of each released tarball.
 
-## Unreleased (v0.2.0)
+## v0.2.0
 
 **Several MyRenault accounts** — spec 002. Renault ties a car to one login, so a second car in the household needs its own.
 
