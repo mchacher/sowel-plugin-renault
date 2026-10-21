@@ -93,6 +93,14 @@ export class Connection {
     const { account: acc, shared, deps, http, memory } = this.o;
     const settings = deps.settingsManager;
     const tokenKey = loginTokenKey(acc.slot);
+    // A token belongs to the e-mail it was issued for: a slot given another
+    // login must not stay silently logged in as the old one. No marker yet
+    // (settings of spec 001) adopts the stored token.
+    const forKey = `${tokenKey}_for`;
+    const owner = acc.email.toLowerCase();
+    const issuedFor = settings.get(forKey);
+    if (issuedFor && issuedFor !== owner) settings.set(tokenKey, "");
+    if (issuedFor !== owner) settings.set(forKey, owner);
     const limiter = new RateLimiter({ perHour: REQUESTS_PER_HOUR });
     const session = new Session(
       http,
@@ -140,7 +148,7 @@ export class Connection {
     const scheduler = this.scheduler;
     if (!account || !scheduler) return;
     try {
-      const seen = await this.o.hooks.exclusive(() => account.discover());
+      const seen = await this.o.hooks.exclusive(() => this.discoverOnce(account));
       if (this.account !== account) return;
       this.lastDiscovery = seen;
       this.lastFailure = null;
@@ -163,12 +171,42 @@ export class Connection {
     }
   }
 
+  /** A discovery queued behind another one may find its connection stopped meanwhile. */
+  private async discoverOnce(account: Account): Promise<Set<string>> {
+    if (this.account !== account)
+      throw new RenaultError("stopped", "the Renault integration is stopping");
+    const published = await account.discover();
+    // Cars run by another account stay protected from the stale pass until they are taken over.
+    return new Set([...published, ...account.skippedIds]);
+  }
+
+  /** Cars listed here but run elsewhere (spec 002 FR9). */
+  get skippedIds(): ReadonlySet<string> {
+    return this.account?.skippedIds ?? new Set();
+  }
+
+  /** Discover again now, once, without moving the 24 h cycle: a car changed hands. */
+  async recheck(): Promise<void> {
+    const account = this.account;
+    if (!account) return;
+    try {
+      const seen = await this.o.hooks.exclusive(() => this.discoverOnce(account));
+      if (this.account !== account) return;
+      this.lastDiscovery = seen;
+      this.o.hooks.discovered();
+    } catch (err) {
+      this.logger.debug({ err }, "Renault recheck failed, the next discovery retries");
+    }
+  }
+
   /**
    * The session failed for good (wrong credentials, two-factor), at connect or
    * later from a poll: stop this account's polling, report `error`. A restart
    * (settings save) starts over.
    */
   private failed(err: RenaultError): void {
+    // A connection stopped meanwhile (settings saved) must not raise anything.
+    if (!this.account) return;
     this.account?.stop();
     this.scheduler?.stop();
     if (err.kind === "invalid_credentials") {
@@ -230,6 +268,7 @@ export class Connection {
   }
 
   stop(): void {
+    this.resolveAlarm();
     this.scheduler?.stop();
     this.limiter?.close();
     this.account?.stop();

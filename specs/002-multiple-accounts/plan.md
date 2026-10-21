@@ -27,6 +27,9 @@
 | `index`      | Slot 1 ok, slot 2 wrong password                                  | status `connected`; slot 1 car polling; no device removed         |
 | `index`      | Both ok, one car left slot 2                                      | stale pass over the union removes only that car                   |
 | `index`      | Slot 2 down at start, devices already in DB                       | `removeStaleDevices` not called                                   |
+| `index`      | Slot given another e-mail, old token stored                       | old token dropped, new login                                      |
+| `index`      | Stop while a discovery is queued; stop with an alarm raised       | nothing raised after stop; alarm resolved                         |
+| `index`      | Car handed from slot 1 to slot 2                                  | not removed; slot 2 polls it                                      |
 | `index`      | Both slots in error                                               | status `error`                                                    |
 | `index`      | Order on a slot-2 car                                             | sent with slot 2's kamereon                                       |
 | `index`      | Same car on both accounts                                         | one device, owned by slot 1                                       |

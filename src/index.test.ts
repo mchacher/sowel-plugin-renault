@@ -414,6 +414,118 @@ describe("RenaultPlugin with several accounts (spec 002)", () => {
     await plugin.stop();
   });
 
+  it("a slot given another e-mail does not reuse the old login token", async () => {
+    const { plugin, world, store } = setup({
+      ...TWO_ACCOUNTS,
+      [`${SETTINGS_PREFIX}login_token_2`]: "tok-old@example.test",
+      [`${SETTINGS_PREFIX}login_token_2_for`]: "old@example.test",
+    });
+    twoAccounts(world);
+    await plugin.start();
+    await vi.advanceTimersByTimeAsync(1_000);
+    const partnerLogins = world.calls.filter(
+      (c) => /accounts\.login$/.test(c.path) && c.body?.includes("partner"),
+    );
+    expect(partnerLogins).toHaveLength(1);
+    expect(store[`${SETTINGS_PREFIX}login_token_2`]).toBe("tok-partner@example.test");
+    expect(store[`${SETTINGS_PREFIX}login_token_2_for`]).toBe("partner@example.test");
+    await plugin.stop();
+  });
+
+  it("a restart keeps a token issued for the same e-mail (any case)", async () => {
+    const { plugin, world } = setup({
+      ...CONFIGURED,
+      [LOGIN_TOKEN_KEY]: "stored",
+      [`${LOGIN_TOKEN_KEY}_for`]: "OWNER@example.test".toLowerCase(),
+    });
+    await plugin.start();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(world.count(/accounts\.login$/)).toBe(0);
+    await plugin.stop();
+  });
+
+  it("a stopped plugin raises nothing from a discovery still queued", async () => {
+    const { plugin, world, events } = setup(TWO_ACCOUNTS);
+    twoAccounts(world);
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    world.on("GET", /\/accounts\/account-0001\/vehicles$/, async () => {
+      await gate;
+      return { status: 200, body: fixture("vehicles") };
+    });
+    world.on("POST", /accounts\.login$/, (c) =>
+      new URLSearchParams(c.body ?? "").get("loginID") === "partner@example.test"
+        ? { status: 200, body: { errorCode: 403101 } }
+        : { status: 200, body: { errorCode: 0, sessionInfo: { cookieValue: "tok-owner" } } },
+    );
+    await plugin.start();
+    await vi.advanceTimersByTimeAsync(1_000);
+    await plugin.stop();
+    release();
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(events).not.toContainEqual(
+      expect.objectContaining({ type: "system.alarm.raised", alarmId: "renault.two-factor.2" }),
+    );
+    // Slot 1 was already in flight; slot 2 was queued behind it and never logs in.
+    expect(
+      world.calls.some((c) => /accounts\.login$/.test(c.path) && c.body?.includes("partner")),
+    ).toBe(false);
+  });
+
+  it("stopping resolves a raised two-factor alarm", async () => {
+    const { plugin, world, events } = setup(TWO_ACCOUNTS);
+    twoAccounts(world);
+    world.on("POST", /accounts\.login$/, (c) =>
+      new URLSearchParams(c.body ?? "").get("loginID") === "partner@example.test"
+        ? { status: 200, body: { errorCode: 403101 } }
+        : { status: 200, body: { errorCode: 0, sessionInfo: { cookieValue: "tok-owner" } } },
+    );
+    await plugin.start();
+    await vi.advanceTimersByTimeAsync(1_000);
+    await plugin.stop();
+    expect(events).toContainEqual(
+      expect.objectContaining({ type: "system.alarm.resolved", alarmId: "renault.two-factor.2" }),
+    );
+  });
+
+  it("a car that left one account is the only one removed", async () => {
+    const { plugin, world, deviceManager } = setup(TWO_ACCOUNTS);
+    twoAccounts(world);
+    await plugin.start();
+    await vi.advanceTimersByTimeAsync(1_000);
+    world.on("GET", /\/accounts\/account-0002\/vehicles$/, () => ({
+      status: 200,
+      body: { vehicleLinks: [] },
+    }));
+    await vi.advanceTimersByTimeAsync(24 * 3_600_000 + 60_000);
+    expect(deviceManager.removeStaleDevices).toHaveBeenLastCalledWith(
+      "renault",
+      new Set(["Rafale N042"]),
+    );
+    await plugin.stop();
+  });
+
+  it("a car handed from one account to the other is not removed and is taken over", async () => {
+    const { plugin, world, deviceManager } = setup(TWO_ACCOUNTS);
+    twoAccounts(world);
+    // Both accounts list the Rafale; slot 1 runs it, slot 2 skips it.
+    world.ok("GET", /\/accounts\/account-0002\/vehicles$/, "vehicles");
+    await plugin.start();
+    await vi.advanceTimersByTimeAsync(1_000);
+    // Slot 1 lets the car go.
+    world.on("GET", /\/accounts\/account-0001\/vehicles$/, () => ({
+      status: 200,
+      body: { vehicleLinks: [] },
+    }));
+    const batteriesBefore = world.count(/account-0002.*battery-status$/);
+    await vi.advanceTimersByTimeAsync(24 * 3_600_000 + 60_000);
+    for (const call of deviceManager.removeStaleDevices.mock.calls)
+      expect(call[1].has("Rafale N042")).toBe(true);
+    await vi.advanceTimersByTimeAsync(10 * 60_000);
+    expect(world.count(/account-0002.*battery-status$/)).toBeGreaterThan(batteriesBefore);
+    await plugin.stop();
+  });
+
   it("never lets any slot's e-mail or password out", async () => {
     const { plugin, world, lines, events, deviceManager } = setup(TWO_ACCOUNTS);
     twoAccounts(world);

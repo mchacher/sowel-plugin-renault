@@ -54,7 +54,7 @@ export function electricLinks(body: unknown): VehicleLink[] {
 export class Account {
   private readonly cars = new Map<string, Entry>();
   private readonly logger: Logger;
-  private readonly skipped = new Set<string>();
+  private skipped = new Set<string>();
   private stopped = false;
 
   constructor(private readonly ctx: AccountContext) {
@@ -63,6 +63,11 @@ export class Account {
 
   vehicle(sourceId: string): { vehicle: Vehicle; scheduler: Scheduler } | undefined {
     return this.cars.get(sourceId);
+  }
+
+  /** Cars listed by this account but run by another one (spec 002 FR9). */
+  get skippedIds(): ReadonlySet<string> {
+    return this.skipped;
   }
 
   has(sourceId: string): boolean {
@@ -79,6 +84,8 @@ export class Account {
    * pass needs every account's answer, so it is not done here).
    */
   async discover(): Promise<Set<string>> {
+    if (this.stopped) throw new RenaultError("stopped", "the Renault integration is stopping");
+    const skippedNow = new Set<string>();
     const personId = await this.ctx.session.personId();
     const person = rec(await this.ctx.kamereon.get(`/persons/${personId}`));
     const accounts = (Array.isArray(person.accounts) ? person.accounts : [])
@@ -106,10 +113,9 @@ export class Account {
         if (this.ctx.isOwned?.(id)) {
           if (!this.skipped.has(id))
             this.logger.info({ vehicle: id }, "Renault car already run by another account");
-          this.skipped.add(id);
+          skippedNow.add(id);
           continue;
         }
-        this.skipped.delete(id);
         const vehicle = new Vehicle(link, { ...this.ctx, accountId });
         const scheduler = new Scheduler((err) =>
           this.logger.error({ err, vehicle: id }, "Renault poll crashed"),
@@ -127,6 +133,7 @@ export class Account {
       this.cars.delete(id);
       this.logger.info({ vehicle: id }, "Renault car left the account");
     }
+    this.skipped = skippedNow;
     return new Set(this.cars.keys());
   }
 

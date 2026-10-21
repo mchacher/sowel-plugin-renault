@@ -94,7 +94,7 @@ class RenaultPlugin implements IntegrationPlugin {
           memory,
           hooks: {
             changed: () => this.updateStatus(),
-            discovered: () => this.removeStaleDevices(),
+            discovered: () => this.onDiscovered(),
             exclusive: (fn) => this.exclusive(fn),
             isOwned: (slot, id) => this.connections.some((c) => c.slot !== slot && c.has(id)),
           },
@@ -130,6 +130,17 @@ class RenaultPlugin implements IntegrationPlugin {
    * answered at least once: a cold start with one account down must not purge
    * its cars (spec 002 FR8).
    */
+  private onDiscovered(): void {
+    this.removeStaleDevices();
+    // A car one account let go of is taken over by the account that skipped it.
+    for (const c of this.connections)
+      for (const id of c.skippedIds)
+        if (!this.connections.some((o) => o !== c && o.has(id))) {
+          void c.recheck();
+          break;
+        }
+  }
+
   private removeStaleDevices(): void {
     const rounds = this.connections.map((c) => c.lastDiscovery);
     if (rounds.some((r) => r === null)) return;

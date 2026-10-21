@@ -43,6 +43,9 @@ MyRenault ties a car to one identity: a second car in the household (the owner's
 - **FR9** If two accounts list the same car (same source id), the first account in slot order owns it; the second logs once and skips it.
 - **FR10** `executeOrder`, `refresh` and polling address the account that owns the device. `refresh` reads one battery per car across all accounts.
 
+- **FR11** A login token is kept with the e-mail it was issued for (`login_token_N_for`). A slot whose e-mail changed drops its token and logs in with the new credentials; settings without the marker (spec 001) adopt their token.
+- **FR12** A car skipped under FR9 stays out of the stale pass, and is taken over at once (one extra discovery, not waiting 24 h) when the account that ran it lets it go. A connection stopped by a settings save raises and sends nothing, and resolves its two-factor alarm.
+
 ## Acceptance criteria
 
 - A spec 001 installation, restarted on this version with no settings change, publishes the same devices, with no new login (stored token reused) and no device removed.
