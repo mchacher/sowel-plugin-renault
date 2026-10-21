@@ -2,11 +2,11 @@
 
 ## Steps
 
-- [ ] 1. `config.ts`: slots, `readConfig`, schema, `loginTokenKey` + tests (old single-account settings read as slot 1).
-- [ ] 2. `account.ts`: `discover()` returns the seen set, drop stale removal, `isOwned` + adapt tests.
-- [ ] 3. `connection.ts`: move the per-account lifecycle out of `index.ts` + tests.
-- [ ] 4. `index.ts`: aggregate status, alarms, routing, stale pass + adapt/extend `index.test.ts`.
-- [ ] 5. `manifest.json` (kept equal to `SETTINGS_SCHEMA`), version 0.2.0, README, CHANGELOG.
+- [x] 1. `config.ts`: slots, `readConfig`, schema, `loginTokenKey` + tests (old single-account settings read as slot 1).
+- [x] 2. `account.ts`: `discover()` returns the seen set, drop stale removal, `isOwned` + adapt tests.
+- [x] 3. `connection.ts`: move the per-account lifecycle out of `index.ts` + tests.
+- [x] 4. `index.ts`: aggregate status, alarms, routing, stale pass + adapt/extend `index.test.ts`.
+- [x] 5. `manifest.json` (kept equal to `SETTINGS_SCHEMA`), version 0.2.0, README, CHANGELOG.
 - [ ] 6. Live check on the owner's instance: the Rafale unchanged after update, then the Megane added through slot 2 (reads only, then one wake with the owner's agreement).
 
 ## Test plan

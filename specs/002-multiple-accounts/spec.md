@@ -1,6 +1,6 @@
 # Spec 002 — Several MyRenault accounts
 
-- **Status**: Draft
+- **Status**: In progress
 - **Date**: 2026-10-21
 - **Related**: spec 001 (one account, cars as electric vehicles), core spec 111 (plugin isolation), core `IntegrationSettingDef` (`text` / `password` / `number` / `boolean` only)
 

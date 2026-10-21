@@ -13,6 +13,8 @@ import { sourceIdOf, Vehicle, type VehicleContext, type VehicleLink } from "./ve
 export type AccountContext = Omit<VehicleContext, "accountId" | "kamereon"> & {
   kamereon: Kamereon;
   session: Session;
+  /** True when another account already runs this car (spec 002 FR9). */
+  isOwned?: (sourceId: string) => boolean;
 };
 
 interface Entry {
@@ -52,6 +54,7 @@ export function electricLinks(body: unknown): VehicleLink[] {
 export class Account {
   private readonly cars = new Map<string, Entry>();
   private readonly logger: Logger;
+  private readonly skipped = new Set<string>();
   private stopped = false;
 
   constructor(private readonly ctx: AccountContext) {
@@ -62,15 +65,20 @@ export class Account {
     return this.cars.get(sourceId);
   }
 
+  has(sourceId: string): boolean {
+    return this.cars.has(sourceId);
+  }
+
   get size(): number {
     return this.cars.size;
   }
 
   /**
-   * Person → MyRenault accounts → electric cars. Throws on failure, and only a
-   * complete discovery removes the devices of cars that left the account.
+   * Person → MyRenault accounts → electric cars. Throws on failure; returns
+   * the source ids it published, for the caller's stale-device pass (a stale
+   * pass needs every account's answer, so it is not done here).
    */
-  async discover(): Promise<void> {
+  async discover(): Promise<Set<string>> {
     const personId = await this.ctx.session.personId();
     const person = rec(await this.ctx.kamereon.get(`/persons/${personId}`));
     const accounts = (Array.isArray(person.accounts) ? person.accounts : [])
@@ -95,6 +103,13 @@ export class Account {
           existing.vehicle.declare();
           continue;
         }
+        if (this.ctx.isOwned?.(id)) {
+          if (!this.skipped.has(id))
+            this.logger.info({ vehicle: id }, "Renault car already run by another account");
+          this.skipped.add(id);
+          continue;
+        }
+        this.skipped.delete(id);
         const vehicle = new Vehicle(link, { ...this.ctx, accountId });
         const scheduler = new Scheduler((err) =>
           this.logger.error({ err, vehicle: id }, "Renault poll crashed"),
@@ -112,7 +127,7 @@ export class Account {
       this.cars.delete(id);
       this.logger.info({ vehicle: id }, "Renault car left the account");
     }
-    this.ctx.deviceManager.removeStaleDevices(this.ctx.integrationId, seen);
+    return new Set(this.cars.keys());
   }
 
   /** One battery read per car, through the budget (the "refresh" button). */

@@ -2,27 +2,21 @@
  * Sowel plugin: Renault
  *
  * Renault cars through the MyRenault cloud, each published as a device
- * carrying the electric vehicle contract of core spec 183 (spec 001).
+ * carrying the electric vehicle contract of core spec 183 (spec 001). Up to
+ * three MyRenault logins run side by side (spec 002).
  */
 
-import { Account } from "./account.js";
-import { RenaultError } from "./api/errors.js";
 import { fetchHttp, type Http } from "./api/http.js";
-import { Kamereon } from "./api/kamereon.js";
-import { RateLimiter } from "./api/rate.js";
-import { Session } from "./api/session.js";
 import { CapabilityMemory } from "./capabilities.js";
+import { Connection, DISCOVERY_EVERY_MS, REQUESTS_PER_HOUR } from "./connection.js";
 import {
+  ACCOUNT_SLOTS,
   CAPABILITIES_KEY,
-  GIGYA_URL,
   isConfigured,
-  KAMEREON_URL,
-  LOGIN_TOKEN_KEY,
+  loginTokenKey,
   readConfig,
-  readHome,
   SETTINGS_SCHEMA,
 } from "./config.js";
-import { Scheduler } from "./scheduler.js";
 import { BATTERY_EVERY_MS } from "./vehicle.js";
 import type {
   Device,
@@ -34,13 +28,7 @@ import type {
 } from "./sowel-api.js";
 
 export const INTEGRATION_ID = "renault";
-
-/** Renault's budget is about 60 per hour; stay well under (spec 001 FR8). */
-export const REQUESTS_PER_HOUR = 40;
-export const DISCOVERY_EVERY_MS = 24 * 3_600_000;
-const RETRY_FIRST_MS = 60_000;
-const RETRY_MAX_MS = 30 * 60_000;
-const TWO_FACTOR_ALARM = "renault.two-factor";
+export { DISCOVERY_EVERY_MS, REQUESTS_PER_HOUR };
 
 class RenaultPlugin implements IntegrationPlugin {
   readonly id = INTEGRATION_ID;
@@ -52,13 +40,9 @@ class RenaultPlugin implements IntegrationPlugin {
 
   private readonly logger: Logger;
   private status: IntegrationStatus = "not_configured";
-  private account: Account | null = null;
-  private limiter: RateLimiter | null = null;
-  private scheduler: Scheduler | null = null;
-  private retryMs = RETRY_FIRST_MS;
-  private alarmRaised = false;
-  private lastFailure: string | null = null;
-  private lastPollAt: string | null = null;
+  private connections: Connection[] = [];
+  /** Discovery steps wait for the one before (a car is published by one account). */
+  private discoveryTail: Promise<unknown> = Promise.resolve();
 
   constructor(
     private readonly deps: PluginDeps,
@@ -81,107 +65,77 @@ class RenaultPlugin implements IntegrationPlugin {
 
   async start(): Promise<void> {
     await this.stop();
-    const cfg = readConfig(this.deps.settingsManager);
+    const settings = this.deps.settingsManager;
+    const cfg = readConfig(settings);
     if (!cfg) {
       this.status = "not_configured";
       return;
     }
-    const settings = this.deps.settingsManager;
-    const limiter = new RateLimiter({ perHour: REQUESTS_PER_HOUR });
-    const session = new Session(
-      this.http,
-      {
-        gigyaUrl: GIGYA_URL,
-        gigyaApiKey: cfg.gigyaApiKey,
-        email: cfg.email,
-        password: cfg.password,
-      },
-      {
-        get: () => settings.get(LOGIN_TOKEN_KEY) || undefined,
-        set: (token) => settings.set(LOGIN_TOKEN_KEY, token ?? ""),
-      },
-    );
-    const kamereon = new Kamereon(this.http, session, limiter, {
-      url: KAMEREON_URL,
-      apiKey: cfg.kamereonApiKey,
-      country: cfg.country,
-    });
+    for (const slot of cfg.incomplete)
+      this.logger.warn({ slot }, "Renault account ignored: e-mail and password are both needed");
+    // A slot that was emptied must not keep a login token that would come back to life.
+    const active = new Set(cfg.accounts.map((a) => a.slot));
+    for (const slot of ACCOUNT_SLOTS)
+      if (!active.has(slot) && settings.get(loginTokenKey(slot)))
+        settings.set(loginTokenKey(slot), "");
+
     const memory = new CapabilityMemory({
       get: () => settings.get(CAPABILITIES_KEY),
       set: (v) => settings.set(CAPABILITIES_KEY, v),
     });
-    session.onFatal = (err) => this.failed(err);
-    this.limiter = limiter;
-    this.scheduler = new Scheduler((err) => this.logger.error({ err }, "Renault task crashed"));
-    this.account = new Account({
-      integrationId: INTEGRATION_ID,
-      kamereon,
-      session,
-      deviceManager: this.deps.deviceManager,
-      logger: this.logger,
-      memory,
-      home: () => readHome(settings),
-      homeRadiusM: cfg.homeRadiusM,
-      onHealth: (ok) => this.setHealth(ok),
-    });
     this.status = "disconnected";
-    this.retryMs = RETRY_FIRST_MS;
-    this.lastFailure = null;
-    this.scheduler.after(0, () => this.connect());
-    this.logger.info({ locale: cfg.locale }, "Renault plugin started");
+    this.connections = cfg.accounts.map(
+      (account) =>
+        new Connection({
+          account,
+          shared: cfg.shared,
+          deps: this.deps,
+          http: this.http,
+          memory,
+          hooks: {
+            changed: () => this.updateStatus(),
+            discovered: () => this.removeStaleDevices(),
+            exclusive: (fn) => this.exclusive(fn),
+            isOwned: (slot, id) => this.connections.some((c) => c.slot !== slot && c.has(id)),
+          },
+        }),
+    );
+    for (const c of this.connections) c.start();
+    this.logger.info(
+      { locale: cfg.shared.locale, accounts: this.connections.length },
+      "Renault plugin started",
+    );
   }
 
-  /** Discover the cars; on failure, tell the kinds apart (FR3). */
-  private async connect(): Promise<void> {
-    const account = this.account;
-    const scheduler = this.scheduler;
-    if (!account || !scheduler) return;
-    try {
-      await account.discover();
-      if (this.account !== account) return;
-      this.lastFailure = null;
-      this.retryMs = RETRY_FIRST_MS;
-      this.resolveAlarm();
-      this.setStatus("connected");
-      this.logger.info({ cars: account.size }, "Renault account connected");
-      scheduler.after(DISCOVERY_EVERY_MS, () => this.connect());
-    } catch (err) {
-      const kind = err instanceof RenaultError ? err.kind : "unexpected";
-      if (kind === "stopped" || this.account !== account) return;
-      // Wrong credentials and two-factor were handled by `failed` (session onFatal).
-      if (kind === "invalid_credentials" || kind === "two_factor") return;
-      const message = err instanceof RenaultError ? err.message : "unexpected failure";
-      this.failOnce(kind, message);
-      this.setStatus(this.status === "connected" ? "connected" : "disconnected");
-      scheduler.after(this.retryMs, () => this.connect());
-      this.retryMs = Math.min(this.retryMs * 2, RETRY_MAX_MS);
-    }
+  private exclusive<T>(fn: () => Promise<T>): Promise<T> {
+    const run = this.discoveryTail.then(fn);
+    this.discoveryTail = run.catch(() => undefined);
+    return run;
+  }
+
+  /** The integration status follows its connections: any connected, else all in error. */
+  private updateStatus(): void {
+    if (this.connections.length === 0) return;
+    const states = this.connections.map((c) => c.state);
+    const next: IntegrationStatus = states.includes("connected")
+      ? "connected"
+      : states.every((s) => s === "error")
+        ? "error"
+        : "disconnected";
+    this.setStatus(next);
   }
 
   /**
-   * The session failed for good (wrong credentials, two-factor), at connect or
-   * later from a poll: stop polling, report `error`. A restart (settings save)
-   * starts over.
+   * Cars that left their account are removed only when every account has
+   * answered at least once: a cold start with one account down must not purge
+   * its cars (spec 002 FR8).
    */
-  private failed(err: RenaultError): void {
-    this.account?.stop();
-    this.scheduler?.stop();
-    if (err.kind === "invalid_credentials") {
-      this.failOnce(err.kind, `${err.message} (or Renault changed its API key)`);
-    } else {
-      this.failOnce(err.kind, err.message);
-      this.raiseAlarm(err.message);
-    }
-    this.setStatus("error");
-  }
-
-  private failOnce(kind: string, message: string): void {
-    if (this.lastFailure === kind) {
-      this.logger.debug({ kind }, "Renault connection still failing");
-      return;
-    }
-    this.lastFailure = kind;
-    this.logger.error({ kind, reason: message }, "Renault connection failed");
+  private removeStaleDevices(): void {
+    const rounds = this.connections.map((c) => c.lastDiscovery);
+    if (rounds.some((r) => r === null)) return;
+    const union = new Set<string>();
+    for (const r of rounds) for (const id of r ?? []) union.add(id);
+    this.deps.deviceManager.removeStaleDevices(INTEGRATION_ID, union);
   }
 
   /**
@@ -190,19 +144,16 @@ class RenaultPlugin implements IntegrationPlugin {
    * unconfirmed instead of its default 30 s.
    */
   getPollingInfo(): { lastPollAt: string; intervalMs: number } | null {
-    if (!this.account) return null;
+    if (this.connections.length === 0) return null;
+    const last = this.connections
+      .map((c) => c.lastPollAt)
+      .filter((t): t is string => t !== null)
+      .sort()
+      .at(-1);
     return {
-      lastPollAt: this.lastPollAt ?? new Date(0).toISOString(),
+      lastPollAt: last ?? new Date(0).toISOString(),
       intervalMs: BATTERY_EVERY_MS,
     };
-  }
-
-  /** Reads reaching Renault (or not) after discovery. */
-  private setHealth(ok: boolean): void {
-    if (ok) this.lastPollAt = new Date().toISOString();
-    if (this.status === "error" || this.status === "not_configured") return;
-    if (ok && this.lastFailure === null) this.setStatus("connected");
-    else if (!ok) this.setStatus("disconnected");
   }
 
   private setStatus(status: IntegrationStatus): void {
@@ -215,47 +166,21 @@ class RenaultPlugin implements IntegrationPlugin {
       this.deps.eventBus.emit({ type: "system.integration.disconnected", integrationId: this.id });
   }
 
-  private raiseAlarm(message: string): void {
-    if (this.alarmRaised) return;
-    this.alarmRaised = true;
-    this.deps.eventBus.emit({
-      type: "system.alarm.raised",
-      alarmId: TWO_FACTOR_ALARM,
-      level: "error",
-      source: this.id,
-      message,
-    });
-  }
-
-  private resolveAlarm(): void {
-    if (!this.alarmRaised) return;
-    this.alarmRaised = false;
-    this.deps.eventBus.emit({
-      type: "system.alarm.resolved",
-      alarmId: TWO_FACTOR_ALARM,
-      source: this.id,
-    });
-  }
-
   async stop(): Promise<void> {
-    this.scheduler?.stop();
-    this.limiter?.close();
-    this.account?.stop();
-    this.scheduler = null;
-    this.limiter = null;
-    this.account = null;
+    for (const c of this.connections) c.stop();
+    this.connections = [];
     if (this.status !== "not_configured") this.setStatus("disconnected");
   }
 
   async refresh(): Promise<void> {
-    // Nothing to read when stopped; reads are budgeted, so one battery read per car.
-    const account = this.account;
-    if (!account) return;
-    await account.refreshBatteries();
+    // Reads are budgeted: one battery read per car, per account.
+    await Promise.all(this.connections.map((c) => c.refreshBatteries()));
   }
 
   async executeOrder(device: Device, orderKey: string, value: unknown): Promise<void> {
-    const entry = this.account?.vehicle(device.sourceDeviceId);
+    const entry = this.connections
+      .map((c) => c.vehicle(device.sourceDeviceId))
+      .find((e) => e !== undefined);
     if (!entry) throw new Error("this vehicle is not connected");
     const { vehicle, scheduler } = entry;
     switch (orderKey) {
