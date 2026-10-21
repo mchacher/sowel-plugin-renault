@@ -13,7 +13,7 @@ import {
   SENTINEL,
 } from "./testing/world.testing.js";
 
-function setup() {
+function setup(isOwned?: (id: string) => boolean) {
   const world = new FakeRenault();
   const session = new Session(
     world.http,
@@ -41,6 +41,7 @@ function setup() {
     home: () => HOME_NEAR,
     homeRadiusM: 200,
     onHealth: () => {},
+    isOwned,
   });
   return { world, account, deviceManager };
 }
@@ -85,23 +86,28 @@ describe("Account.discover", () => {
     expect(account.size).toBe(1);
     expect(world.count(/account-other-1/)).toBe(0);
     expect(deviceManager.upsertFromDiscovery.mock.calls[0][2].friendlyName).toBe("Rafale N042");
-    expect(deviceManager.removeStaleDevices).toHaveBeenCalledWith(
-      "renault",
-      new Set(["Rafale N042"]),
-    );
+    expect(deviceManager.removeStaleDevices).not.toHaveBeenCalled();
     account.stop();
   });
 
   it("forgets a car removed from the account", async () => {
     const { world, account, deviceManager } = setup();
-    await account.discover();
+    expect(await account.discover()).toEqual(new Set(["Rafale N042"]));
     world.on("GET", /\/accounts\/account-0001\/vehicles$/, () => ({
       status: 200,
       body: { vehicleLinks: [] },
     }));
-    await account.discover();
+    expect(await account.discover()).toEqual(new Set());
     expect(account.size).toBe(0);
-    expect(deviceManager.removeStaleDevices).toHaveBeenLastCalledWith("renault", new Set());
+    expect(deviceManager.removeStaleDevices).not.toHaveBeenCalled();
+    account.stop();
+  });
+
+  it("skips a car another account already runs", async () => {
+    const { account, deviceManager } = setup((id) => id === "Rafale N042");
+    expect(await account.discover()).toEqual(new Set());
+    expect(account.size).toBe(0);
+    expect(deviceManager.upsertFromDiscovery).not.toHaveBeenCalled();
     account.stop();
   });
 

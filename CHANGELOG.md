@@ -2,6 +2,15 @@
 
 All notable changes to this plugin. Versions follow semver; the registry in `mchacher/sowel` carries the SHA256 of each released tarball.
 
+## Unreleased (v0.2.0)
+
+**Several MyRenault accounts** — spec 002. Renault ties a car to one login, so a second car in the household needs its own.
+
+- **Up to three accounts**, as numbered slots in the settings (`E-mail MyRenault 2`, `Mot de passe MyRenault 2`, an optional account name). Slot 1 is the account you already have: nothing to change, nothing re-logged.
+- **Independent accounts**: each has its own session, request budget (40 per hour) and retry. A wrong password or two-factor on one never stops, hides or removes the cars of another; the two-factor alarm names the account.
+- **Status**: connected as soon as one account is; error only when all are.
+- **Cars that left an account** are removed only once every account has answered, so an account that is down at startup never costs you its devices. Emptying a slot removes its cars at the next complete discovery.
+
 ## v0.1.0
 
 First release. **Renault cars in Sowel through the MyRenault cloud**, each published as an electric vehicle (core spec 183) — spec 001, checked live on a Renault Rafale plug-in hybrid.

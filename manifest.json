@@ -22,6 +22,51 @@
       "required": true
     },
     {
+      "key": "account_label",
+      "label": "Nom du compte",
+      "type": "text",
+      "required": false,
+      "placeholder": "Compte 1"
+    },
+    {
+      "key": "email_2",
+      "label": "E-mail MyRenault 2",
+      "type": "text",
+      "required": false
+    },
+    {
+      "key": "password_2",
+      "label": "Mot de passe MyRenault 2",
+      "type": "password",
+      "required": false
+    },
+    {
+      "key": "account_label_2",
+      "label": "Nom du compte 2",
+      "type": "text",
+      "required": false,
+      "placeholder": "Compte 2"
+    },
+    {
+      "key": "email_3",
+      "label": "E-mail MyRenault 3",
+      "type": "text",
+      "required": false
+    },
+    {
+      "key": "password_3",
+      "label": "Mot de passe MyRenault 3",
+      "type": "password",
+      "required": false
+    },
+    {
+      "key": "account_label_3",
+      "label": "Nom du compte 3",
+      "type": "text",
+      "required": false,
+      "placeholder": "Compte 3"
+    },
+    {
       "key": "locale",
       "label": "Langue du compte",
       "type": "text",

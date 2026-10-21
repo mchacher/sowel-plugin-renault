@@ -1,10 +1,12 @@
 # Sowel plugin: renault
 
-Renault cars in [Sowel](https://docs.sowel.org), through the **MyRenault cloud** (the private API the official app uses). One account, any number of cars, each published as an **electric vehicle** (core spec 183): battery level, electric range, plugged and charging state, the time of the car's last report, at home or not, mileage, charge limit — and a **wake** order that lets a charging recipe resume a charge the car paused by falling asleep.
+Renault cars in [Sowel](https://docs.sowel.org), through the **MyRenault cloud** (the private API the official app uses). Up to three MyRenault accounts, any number of cars, each published as an **electric vehicle** (core spec 183): battery level, electric range, plugged and charging state, the time of the car's last report, at home or not, mileage, charge limit — and a **wake** order that lets a charging recipe resume a charge the car paused by falling asleep.
 
 ## Setup
 
 In Sowel, **Integrations → Renault**: your MyRenault e-mail and password. Optional: the account locale (`fr_FR`), the radius around Sowel's home position that counts as "at home" (200 m), and the Gigya / Kamereon keys, only if Renault rotates the ones shipped with the plugin.
+
+**A second car on another login** (Renault allows one login per car owner): fill _E-mail / Mot de passe MyRenault 2_ (and a third slot if needed), optionally with an account name used in logs and alarms. Each account runs on its own; a failing one never affects the others. Slot 1 is the account configured before multi-account support.
 
 The password is sent once; the plugin then keeps Renault's long-lived login token. Accounts that require two-factor authentication are not supported yet (the plugin says so and raises an alarm). When the integration shows `error`, the reason is in Sowel's logs (wrong e-mail or password, or a rotated Renault key).
 
