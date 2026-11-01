@@ -2,6 +2,12 @@
 
 All notable changes to this plugin. Versions follow semver; the registry in `mchacher/sowel` carries the SHA256 of each released tarball.
 
+## v0.2.1
+
+**Fix: a plugged car no longer reads unplugged when its charge flap is open** — #5.
+
+- With the cable in and the charge flap open, Renault reports charging status `0.4`. The plugin turned that into `charging_state` unplugged, so the car's plugged point and its charging state disagreed. The plug status now decides: the car reads idle when the cable is in, and unplugged otherwise.
+
 ## v0.2.0
 
 **Several MyRenault accounts** — spec 002. Renault ties a car to one login, so a second car in the household needs its own.
