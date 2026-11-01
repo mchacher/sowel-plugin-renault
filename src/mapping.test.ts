@@ -24,8 +24,11 @@ describe("chargingStateOf", () => {
     [1, -1.5, "idle"],
     [0, 0.0, "unplugged"],
     [0, 1.0, "unplugged"],
-    [1, 0.4, "unplugged"],
+    [1, 0.4, "idle"],
+    [0, 0.4, "unplugged"],
+    [undefined, 0.4, "unplugged"],
     [-1, 0.0, "error"],
+    [-1, 0.4, "error"],
   ])("plugStatus %s, chargingStatus %s → %s", (plug, cs, expected) => {
     expect(chargingStateOf(plug, cs, null)).toBe(expected);
   });
