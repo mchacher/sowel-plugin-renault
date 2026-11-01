@@ -113,6 +113,18 @@ export function attributesOf(body: unknown): Record<string, unknown> | null {
   return attrs !== null && typeof attrs === "object" ? (attrs as Record<string, unknown>) : null;
 }
 
+/**
+ * Core spec 194 — the car's charging power in W. Renault sends
+ * `chargingInstantaneousPower` in kW on some models and in W on others; a home
+ * charge is never under 100 W nor over 100 kW, so a value under 100 is kW.
+ */
+export function chargePowerW(value: unknown): number | undefined {
+  const v = num(value);
+  if (v === undefined) return undefined;
+  if (v <= 0) return 0;
+  return v < 100 ? Math.round(v * 1000) : Math.round(v);
+}
+
 /** Contract payload of a battery-status answer. Absent fields are omitted. */
 export function batteryPayload(
   attrs: Record<string, unknown>,
@@ -127,6 +139,8 @@ export function batteryPayload(
   if (plugged !== null) out.plugged = plugged;
   const state = chargingStateOf(attrs.plugStatus, attrs.chargingStatus, previous);
   if (state !== null) out.charging_state = state;
+  const power = chargePowerW(attrs.chargingInstantaneousPower);
+  if (power !== undefined) out.charge_power = power;
   const at = isoUtc(attrs.timestamp);
   if (at !== null) out.reported_at = at;
   return out;

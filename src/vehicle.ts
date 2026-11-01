@@ -119,6 +119,9 @@ export class Vehicle {
         enumValues: [...EV_CHARGING_STATES],
       },
       { key: "reported_at", type: "string", category: "ev_reported_at" },
+      // Core spec 194: tells two cars on two chargers apart. Bound even when
+      // the model never sends it (it then stays empty).
+      { key: "charge_power", type: "number", category: "ev_charge_power", unit: "W" },
     ];
     if (this.ctx.home() && !this.refused("location"))
       data.push({ key: "at_home", type: "boolean", category: "ev_at_home" });
