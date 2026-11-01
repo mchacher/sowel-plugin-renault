@@ -96,6 +96,17 @@ describe("payloads", () => {
     });
   });
 
+  it("maps the instantaneous charging power to W, kW or W as the model sends it", () => {
+    expect(batteryPayload({ chargingInstantaneousPower: 7.2 }, null)).toEqual({
+      charge_power: 7200,
+    });
+    expect(batteryPayload({ chargingInstantaneousPower: 6900 }, null)).toEqual({
+      charge_power: 6900,
+    });
+    expect(batteryPayload({ chargingInstantaneousPower: 0 }, null)).toEqual({ charge_power: 0 });
+    expect(batteryPayload({ chargingInstantaneousPower: "n/a" }, null)).toEqual({});
+  });
+
   it("omits what Renault does not send", () => {
     expect(batteryPayload({}, null)).toEqual({});
   });

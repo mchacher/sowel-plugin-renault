@@ -106,6 +106,7 @@ describe("Vehicle declaration", () => {
       plugged: "ev_plugged",
       charging_state: "ev_charging_state",
       reported_at: "ev_reported_at",
+      charge_power: "ev_charge_power",
       at_home: "ev_at_home",
       mileage: "ev_mileage",
       fuel_range: "generic",

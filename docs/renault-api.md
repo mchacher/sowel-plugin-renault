@@ -51,13 +51,13 @@ Kamereon headers: `Content-type: application/vnd.api+json`, `apikey: <kamereon k
 
 Prefix: `{kam}/commerce/v1/accounts/{accountId}/kamereon`. Reads return the car's **last report** (look at its timestamp); they never wake it.
 
-| Data         | Path                                            | Fields used                                                                                                  |
-| ------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Battery      | `/kca/car-adapter/v2/cars/{vin}/battery-status` | `timestamp`, `batteryLevel`, `batteryAutonomy` (km), `plugStatus`, `chargingStatus`, `chargingRemainingTime` |
-| Cockpit      | `/kca/car-adapter/v1/cars/{vin}/cockpit`        | `totalMileage`, `fuelAutonomy`, `fuelQuantity`                                                               |
-| HVAC         | `/kca/car-adapter/v1/cars/{vin}/hvac-status`    | `hvacStatus`, `socThreshold`, `lastUpdateTime`                                                               |
-| Location     | `/kca/car-adapter/v1/cars/{vin}/location`       | `gpsLatitude`, `gpsLongitude`, `lastUpdateTime` — for `at_home` only                                         |
-| Charge limit | `/kcm/v1/vehicles/{vin}/ev/soc-levels`          | `socMin`, `socTarget`, `lastEnergyUpdateTimestamp` (not wrapped in `data`)                                   |
+| Data         | Path                                            | Fields used                                                                                                                                                   |
+| ------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Battery      | `/kca/car-adapter/v2/cars/{vin}/battery-status` | `timestamp`, `batteryLevel`, `batteryAutonomy` (km), `plugStatus`, `chargingStatus`, `chargingRemainingTime`, `chargingInstantaneousPower` (kW or W by model) |
+| Cockpit      | `/kca/car-adapter/v1/cars/{vin}/cockpit`        | `totalMileage`, `fuelAutonomy`, `fuelQuantity`                                                                                                                |
+| HVAC         | `/kca/car-adapter/v1/cars/{vin}/hvac-status`    | `hvacStatus`, `socThreshold`, `lastUpdateTime`                                                                                                                |
+| Location     | `/kca/car-adapter/v1/cars/{vin}/location`       | `gpsLatitude`, `gpsLongitude`, `lastUpdateTime` — for `at_home` only                                                                                          |
+| Charge limit | `/kcm/v1/vehicles/{vin}/ev/soc-levels`          | `socMin`, `socTarget`, `lastEnergyUpdateTimestamp` (not wrapped in `data`)                                                                                    |
 
 `chargingStatus`: 0.0 not charging · 0.1 waiting for a planned charge · 0.2 charge ended · 0.3 waiting for current · 0.4 energy flap open · 1.0 charging · −1.0 error (ZE50) / not charging (older) · −1.1 unavailable · −1.3…−1.6 V2G/V2L. `plugStatus`: 0 unplugged, 1 plugged, −1 plug error.
 
@@ -92,6 +92,7 @@ Prefix: `{kam}/commerce/v1/accounts/{accountId}/kamereon`. Reads return the car'
 | `plugged`              | `plugStatus == 1` (fallback on `chargingStatus` when unknown)                                                                                                                                                                                                                       |
 | `charging_state`       | plugStatus −1 → error · 0 → unplugged · chargingStatus 0.4 (flap open) → idle when plugStatus 1, else unplugged (#5) · 1.0/−1.6 → charging · 0.2 → completed · 0.1 → scheduled · 0.3/−1.3 → waiting · −1.0 plugged → error · 0.0/−1.4/−1.5 plugged → idle · −1.1/unknown → previous |
 | `reported_at`          | `battery-status.timestamp`, normalised to ISO UTC                                                                                                                                                                                                                                   |
+| `charge_power`         | `battery-status.chargingInstantaneousPower` in W (a value under 100 is kW, × 1000); core spec 194                                                                                                                                                                                   |
 | `at_home`              | distance(location, home.latitude/longitude) < a radius; coordinates discarded                                                                                                                                                                                                       |
 | `mileage`              | `cockpit.totalMileage`                                                                                                                                                                                                                                                              |
 | `charge_limit`         | `soc-levels.socTarget` (absent when forbidden)                                                                                                                                                                                                                                      |
