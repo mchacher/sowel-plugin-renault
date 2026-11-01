@@ -44,7 +44,9 @@ export function chargingStateOf(
   if (num(plugStatus) === -1) return "error";
   const cs = num(chargingStatus);
   const plugged = pluggedOf(plugStatus, chargingStatus);
-  if (plugged === false || cs === 0.4) return "unplugged";
+  if (plugged === false) return "unplugged";
+  // 0.4 is "energy flap open": the cable is in when plugStatus says so (#5).
+  if (cs === 0.4) return plugged === true ? "idle" : "unplugged";
   switch (cs) {
     case 1.0:
     case -1.6:
